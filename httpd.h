@@ -66,18 +66,9 @@ struct client_t {
 	socklen_t len;
 };
 
-static int str_append(char * s, size_t len, char c)
-{
-	size_t l = strlen(s);
-	if (l < len) {
-		s[l]= c;
-		return 0;
-	}
-	return -1;
-}
-
 /* ########## Declarations ########## */
 
+HTTPDAPI int str_append(char * s, size_t len, char c);
 HTTPDAPI int method_append(struct request_t * r, char c);
 HTTPDAPI int protocol_append(struct request_t * r, char c);
 HTTPDAPI void request_clear(struct request_t * r);
@@ -104,6 +95,17 @@ HTTPDAPI void print_req(int rc, struct request_t * r);
 HTTPDAPI int run_server(struct server_t * server);
 
 #ifdef HTTPD_IMPLEMENTATION
+
+HTTPDAPI int str_append(char * s, size_t len, char c)
+{
+	size_t l = strlen(s);
+	if (l < len) {
+		s[l]= c;
+		return 0;
+	}
+	return -1;
+}
+
 
 HTTPDAPI int method_append(struct request_t * r, char c)
 {
