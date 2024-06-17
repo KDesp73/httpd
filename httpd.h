@@ -4,6 +4,17 @@
  * License: BSD (4 clause), see README.md
  */
 
+#ifndef HTTPD_H
+#define HTTPD_H
+
+#ifndef HTTPDAPI
+    #define HTTPDAPI static
+#endif // HTTPDAPI
+
+#pragma GCC diagnostic ignored "-Wunused-function"
+
+/* ########## Includes ########## */
+
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -12,6 +23,8 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+
+/* ########## Types ########## */
 
 #define UNUSED(arg)  ((void)arg)
 
@@ -63,34 +76,63 @@ static int str_append(char * s, size_t len, char c)
 	return -1;
 }
 
-static int method_append(struct request_t * r, char c)
+/* ########## Declarations ########## */
+
+HTTPDAPI int method_append(struct request_t * r, char c);
+HTTPDAPI int protocol_append(struct request_t * r, char c);
+HTTPDAPI void request_clear(struct request_t * r);
+HTTPDAPI int url_append(struct request_t * r, char c);
+HTTPDAPI int query_append(struct request_t * r, char c);
+HTTPDAPI int query_next(struct request_t * r);
+HTTPDAPI void clear(char * s, size_t len);
+HTTPDAPI int append(char * s, size_t len, char c);
+HTTPDAPI void clear_header_property(struct header_property_t * prop);
+HTTPDAPI int append(char * s, size_t len, char c);
+HTTPDAPI int parse(int client_sock, struct request_t * r);
+HTTPDAPI int request_bad(int sock, const struct request_t * req);
+HTTPDAPI void response_init(struct response_t * res);
+HTTPDAPI int response_append_content_type(struct response_t * res, const char * mime);
+HTTPDAPI int response_append(struct response_t * res, const char * text, size_t len);
+HTTPDAPI int response_append_no_cache(struct response_t * res);
+HTTPDAPI int response_append_connection_close(struct response_t * res);
+HTTPDAPI int response_append_header_start(struct response_t * res);
+HTTPDAPI int response_append_header_end(struct response_t * res);
+HTTPDAPI int send_header_mime(int sock, const char * mime);
+HTTPDAPI int request_send_file(int sock, const struct request_t * req, const char * filename);
+HTTPDAPI int request_response(int sock, const struct request_t * req);
+HTTPDAPI void print_req(int rc, struct request_t * r);
+HTTPDAPI int run_server(struct server_t * server);
+
+#ifdef HTTPD_IMPLEMENTATION
+
+HTTPDAPI int method_append(struct request_t * r, char c)
 {
 	return str_append(r->method, sizeof(r->method)-1, c);
 }
 
-static int protocol_append(struct request_t * r, char c)
+HTTPDAPI int protocol_append(struct request_t * r, char c)
 {
 	return str_append(r->protocol, sizeof(r->protocol)-1, c);
 }
 
-static void request_clear(struct request_t * r)
+HTTPDAPI void request_clear(struct request_t * r)
 {
 	memset(r, 0, sizeof(struct request_t));
 }
 
-static int url_append(struct request_t * r, char c)
+HTTPDAPI int url_append(struct request_t * r, char c)
 {
 	return str_append(r->url, sizeof(r->url)-1, c);
 }
 
-static int query_append(struct request_t * r, char c)
+HTTPDAPI int query_append(struct request_t * r, char c)
 {
 	if (r->nquery >= sizeof(r->query) / sizeof(struct query_t))
 		return -1;
 	return str_append(r->query[r->nquery].val, sizeof(r->query[r->nquery].val)-1, c);
 }
 
-static int query_next(struct request_t * r)
+HTTPDAPI int query_next(struct request_t * r)
 {
 	if (r->nquery >= sizeof(r->query) / sizeof(struct query_t))
 		return -1;
@@ -98,18 +140,18 @@ static int query_next(struct request_t * r)
 	return 0;
 }
 
-static void clear(char * s, size_t len)
+HTTPDAPI void clear(char * s, size_t len)
 {
 	memset(s, 0, len);
 }
 
-static void clear_header_property(struct header_property_t * prop)
+HTTPDAPI void clear_header_property(struct header_property_t * prop)
 {
 	clear(prop->key, sizeof(prop->key));
 	clear(prop->value, sizeof(prop->value));
 }
 
-static int append(char * s, size_t len, char c)
+HTTPDAPI int append(char * s, size_t len, char c)
 {
 	return str_append(s, len, c);
 }
@@ -123,7 +165,7 @@ static int append(char * s, size_t len, char c)
  * \return \c 0 on success, the negative state number in which the
  *   error ocurred.
  */
-static int parse(int client_sock, struct request_t * r)
+HTTPDAPI int parse(int client_sock, struct request_t * r)
 {
 	int state = 0; /* state machine */
 	int read_next = 1; /* indicator to read data */
@@ -314,7 +356,7 @@ static int parse(int client_sock, struct request_t * r)
 }
 
 
-static void print_req(int rc, struct request_t * r)
+HTTPDAPI void print_req(int rc, struct request_t * r)
 {
 	size_t i;
 	if (rc) {
@@ -328,7 +370,7 @@ static void print_req(int rc, struct request_t * r)
 	printf("\n");
 }
 
-static int run_server(struct server_t * server)
+HTTPDAPI int run_server(struct server_t * server)
 {
 	struct client_t client;
 	struct request_t r;
@@ -355,7 +397,7 @@ static int run_server(struct server_t * server)
 	}
 }
 
-static int request_bad(int sock, const struct request_t * req)
+HTTPDAPI int request_bad(int sock, const struct request_t * req)
 {
 	static const char * RESPONSE =
 		"HTTP/1.1 400 Bad Request\r\n"
@@ -374,12 +416,12 @@ static int request_bad(int sock, const struct request_t * req)
 	return write(sock, RESPONSE, length) == length ? 0 : -1;
 }
 
-static void response_init(struct response_t * res)
+HTTPDAPI void response_init(struct response_t * res)
 {
 	memset(res->head, 0, sizeof(res->head));
 }
 
-static int response_append_content_type(struct response_t * res, const char * mime)
+HTTPDAPI int response_append_content_type(struct response_t * res, const char * mime)
 {
 	static const char * TEXT = "Content-Type: ";
 
@@ -391,7 +433,7 @@ static int response_append_content_type(struct response_t * res, const char * mi
 	return 0;
 }
 
-static int response_append(struct response_t * res, const char * text, size_t len)
+HTTPDAPI int response_append(struct response_t * res, const char * text, size_t len)
 {
 	const size_t n = sizeof(res->head) - strlen(res->head);
 	if (len > n)
@@ -400,7 +442,7 @@ static int response_append(struct response_t * res, const char * text, size_t le
 	return 0;
 }
 
-static int response_append_no_cache(struct response_t * res)
+HTTPDAPI int response_append_no_cache(struct response_t * res)
 {
 	static const char * TEXT =
 		"Pragma: no-cache\r\n"
@@ -408,25 +450,25 @@ static int response_append_no_cache(struct response_t * res)
 	return response_append(res, TEXT, strlen(TEXT));
 }
 
-static int response_append_connection_close(struct response_t * res)
+HTTPDAPI int response_append_connection_close(struct response_t * res)
 {
 	static const char * TEXT = "Connection: close\r\n";
 	return response_append(res, TEXT, strlen(TEXT));
 }
 
-static int response_append_header_start(struct response_t * res)
+HTTPDAPI int response_append_header_start(struct response_t * res)
 {
 	static const char * TEXT = "HTTP/1.1 200 OK\r\n";
 	return response_append(res, TEXT, strlen(TEXT));
 }
 
-static int response_append_header_end(struct response_t * res)
+HTTPDAPI int response_append_header_end(struct response_t * res)
 {
 	static const char * TEXT = "\r\n";
 	return response_append(res, TEXT, strlen(TEXT));
 }
 
-static int send_header_mime(int sock, const char * mime)
+HTTPDAPI int send_header_mime(int sock, const char * mime)
 {
 	int len;
 	struct response_t res;
@@ -442,7 +484,7 @@ static int send_header_mime(int sock, const char * mime)
 	return write(sock, res.head, len) == len ? 0 : -1;
 }
 
-static int request_send_file(int sock, const struct request_t * req, const char * filename)
+HTTPDAPI int request_send_file(int sock, const struct request_t * req, const char * filename)
 {
 	int fd;
 	int rc;
@@ -466,7 +508,7 @@ static int request_send_file(int sock, const struct request_t * req, const char 
 	return 0;
 }
 
-static int request_response(int sock, const struct request_t * req)
+HTTPDAPI int request_response(int sock, const struct request_t * req)
 {
 	static const char * RESPONSE =
 		"HTTP/1.1 200 OK\r\n"
@@ -489,43 +531,6 @@ static int request_response(int sock, const struct request_t * req)
 	}
 }
 
+#endif // HTTPD_IMPLEMENTATION
 
-int main()
-{
-	static struct server_t server;
-	const int reuse = 1;
-
-	memset(&server, 0, sizeof(server));
-	server.sock = -1;
-
-	server.sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (server.sock < 0) {
-		perror("socket");
-		return -1;
-	}
-
-	memset(&server.addr, 0, sizeof(server.addr));
-	server.addr.sin_family = AF_INET;
-	server.addr.sin_port = htons(8080);
-	server.addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	if (bind(server.sock, (const struct sockaddr *)&server.addr, sizeof(server.addr)) < 0) {
-		perror("bind");
-		return -1;
-	}
-
-	if (setsockopt(server.sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
-		perror("setsockopt");
-		return -1;
-	}
-
-	if (listen(server.sock, 2) < 0) {
-		perror("listen");
-		return -1;
-	}
-
-	server.func_bad_request = request_bad;
-	server.func_request = request_response;
-
-	return run_server(&server);
-}
-
+#endif // HTTPD_H
